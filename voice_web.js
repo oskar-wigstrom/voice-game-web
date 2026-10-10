@@ -10,6 +10,7 @@
   // trailing silence (>= 1 s) to endpoint the utterance. PREROLL_S of audio before opening is replayed.
   const OPEN_DB = 12, CLOSE_DB = 6, MIN_OPEN_DBFS = -50, HOLD_S = 1.2, PREROLL_S = 0.4;
   const stats = { fedS: 0, totalS: 0 };
+  let muted = false; // set while the game speaks, so it does not hear itself
 
   function makeGate(rate) {
     const g = { open: false, floor: -70, quietS: 0, pre: [] };
@@ -23,6 +24,12 @@
       const stayAt = Math.max(g.floor + CLOSE_DB, MIN_OPEN_DBFS - 6);
       const out = { feed: [], closed: false };
       stats.totalS += dur;
+      if (muted) {
+        g.open = false;
+        g.quietS = 0;
+        g.pre = [];
+        return out;
+      }
       if (!g.open) {
         g.floor += (db - g.floor) * (db < g.floor ? 0.3 : 0.05);
         if (db >= openAt) {
@@ -150,5 +157,7 @@
     S.node = S.src = S.rec = S.stream = S.ctx = S.sink = null;
   }
 
-  window.voiceWeb = { load, startMic, stopMic, stats };
+  function setMuted(on) { muted = !!on; }
+
+  window.voiceWeb = { load, startMic, stopMic, setMuted, stats };
 })();
